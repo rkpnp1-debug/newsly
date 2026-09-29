@@ -7,20 +7,19 @@
 - ✨ Clean, modern UI optimized for reading (large typography, excellent contrast)
 - 🌙 Dark / Light mode
 - 🏆 Points system — earn points for time spent reading + article clicks
-- 🔐 Login with Google, Facebook, or continue as Guest
-- 💾 Guest data saved in localStorage (session)
-- ☁️ Authenticated users ready for Vercel / Upstash / Neon DB
+- 🔐 Ready for Google / Facebook / Guest login
+- 💾 Guest data saved in localStorage
 - ⚡ Fast skeleton loaders + image optimization
 - 🔍 Categories, search, and smooth feed
 - 📱 Fully responsive
+- Powered by [NewsAPI.org](https://newsapi.org)
 
 ## Tech Stack
 
 - Next.js 15 (App Router)
 - Tailwind CSS
-- NextAuth.js (Google + Facebook + Guest)
-- NewsData.io (or any news API)
 - TypeScript
+- NewsAPI.org
 
 ## Quick Start
 
@@ -29,7 +28,7 @@ git clone https://github.com/rkpnp1-debug/newsly.git
 cd newsly
 npm install
 cp .env.example .env.local
-# Add your NEWSDATA_API_KEY and NEXTAUTH_SECRET
+# Add your NEWS_API_KEY from https://newsapi.org
 npm run dev
 ```
 
@@ -39,18 +38,17 @@ Open [http://localhost:3000](http://localhost:3000)
 
 | Variable | Required | Description |
 |----------|----------|-------------|
-| `NEWSDATA_API_KEY` | Yes | Free key from [newsdata.io](https://newsdata.io) |
-| `NEXTAUTH_SECRET` | Yes | Random string (`openssl rand -base64 32`) |
-| `NEXTAUTH_URL` | Yes | Your app URL |
-| `GOOGLE_CLIENT_ID` / `SECRET` | Optional | For Google login |
-| `FACEBOOK_CLIENT_ID` / `SECRET` | Optional | For Facebook login |
+| `NEWS_API_KEY` | Yes | Key from [newsapi.org](https://newsapi.org) |
+| `NEXTAUTH_SECRET` | Optional | For auth later |
+| `NEXTAUTH_URL` | Optional | Your app URL |
+
+> **Note:** NewsAPI.org free developer plan is intended for development / localhost. Production use requires a paid plan.
 
 ## Deploy to Vercel
 
-1. Push to GitHub (already done)
-2. Import the repo on [vercel.com](https://vercel.com)
-3. Add the environment variables
-4. Deploy
+1. Import the repo on [vercel.com](https://vercel.com)
+2. Add `NEWS_API_KEY` in Environment Variables
+3. Deploy
 
 ## About
 

@@ -1,4 +1,4 @@
-import { Article, NewsResponse } from "@/types/news";
+import { Article } from "@/types/news";
 
 // Fallback mock data so the app works even without an API key
 const MOCK_ARTICLES: Article[] = [
@@ -76,12 +76,29 @@ const MOCK_ARTICLES: Article[] = [
   },
 ];
 
+// Map NewsAPI.org article → our internal Article shape
+function mapNewsApiArticle(a: any, index: number): Article {
+  return {
+    article_id: a.url || `newsapi-${index}-${Date.now()}`,
+    title: a.title || "Untitled",
+    link: a.url || "#",
+    description: a.description || null,
+    content: a.content || null,
+    pubDate: a.publishedAt || new Date().toISOString(),
+    image_url: a.urlToImage || null,
+    source_id: a.source?.id || a.source?.name?.toLowerCase().replace(/\s+/g, "-") || "unknown",
+    source_name: a.source?.name || "Unknown",
+    category: [],
+    creator: a.author ? [a.author] : null,
+  };
+}
+
 export async function fetchNews(
   category?: string,
   query?: string,
   page?: string
 ): Promise<{ articles: Article[]; nextPage?: string; isMock?: boolean }> {
-  const apiKey = process.env.NEWSDATA_API_KEY;
+  const apiKey = process.env.NEWS_API_KEY;
 
   // If no API key, return beautiful mock data so the UI still works
   if (!apiKey) {
@@ -103,35 +120,68 @@ export async function fetchNews(
   }
 
   try {
-    const params = new URLSearchParams({
-      apikey: apiKey,
-      language: "en",
-      size: "12",
-    });
+    let url: string;
 
-    if (category && category !== "top") {
-      params.set("category", category);
-    }
     if (query) {
-      params.set("q", query);
-    }
-    if (page) {
-      params.set("page", page);
+      // Search endpoint
+      const params = new URLSearchParams({
+        q: query,
+        language: "en",
+        sortBy: "publishedAt",
+        pageSize: "12",
+        apiKey,
+      });
+      if (page) params.set("page", page);
+      url = `https://newsapi.org/v2/everything?${params.toString()}`;
+    } else {
+      // Top headlines
+      const params = new URLSearchParams({
+        country: "us",
+        pageSize: "12",
+        apiKey,
+      });
+
+      // NewsAPI supports these categories for top-headlines
+      const validCategories = [
+        "business",
+        "entertainment",
+        "general",
+        "health",
+        "science",
+        "sports",
+        "technology",
+      ];
+
+      if (category && category !== "top" && validCategories.includes(category)) {
+        params.set("category", category);
+      }
+
+      if (page) params.set("page", page);
+      url = `https://newsapi.org/v2/top-headlines?${params.toString()}`;
     }
 
-    const res = await fetch(`https://newsdata.io/api/1/latest?${params.toString()}`, {
+    const res = await fetch(url, {
       next: { revalidate: 300 }, // cache 5 min
     });
 
     if (!res.ok) {
-      console.error("News API error:", res.status);
+      console.error("NewsAPI error:", res.status, await res.text());
       return { articles: MOCK_ARTICLES, isMock: true };
     }
 
-    const data: NewsResponse = await res.json();
+    const data = await res.json();
+
+    if (data.status !== "ok") {
+      console.error("NewsAPI returned error:", data);
+      return { articles: MOCK_ARTICLES, isMock: true };
+    }
+
+    const articles = (data.articles || []).map(mapNewsApiArticle);
+
     return {
-      articles: data.results || [],
-      nextPage: data.nextPage,
+      articles,
+      // NewsAPI uses page numbers, not cursors
+      nextPage: data.articles?.length === 12 ? String(Number(page || 1) + 1) : undefined,
     };
   } catch (error) {
     console.error("Failed to fetch news:", error);
